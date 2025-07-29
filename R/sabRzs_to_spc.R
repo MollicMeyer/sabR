@@ -1,19 +1,18 @@
 #' Convert Zonal Statistics from Polygons to SoilProfileCollection
 #'
-#' Computes zonal summary statistics from a raster stack using input polygons (AOI)
-#' and converts the results into SoilProfileCollection objects.
+#' Computes zonal summary statistics for polygons and converts them to SoilProfileCollection.
 #'
 #' @param stack SpatRaster; the raster stack (e.g., output from `fetch_sabR()$stack`)
-#' @param aoi sf or SpatVector; polygon shapefile or object containing zones
-#' @param zones Character vector; subset of zone IDs (e.g., c("NW_plot", "SE_plot")) to use from the `id_column`
-#' @param id_column Character; name of column in `aoi` used as unique zone ID (e.g., "Name")
-#' @param props Character vector; soil properties to extract (e.g., c("sand", "clay"))
-#' @param depths Character vector; depth intervals to use (must match available raster names)
-#' @param new_depths Numeric vector; new target depth bins (e.g., c(0, 15, 30))
-#' @param stats Character vector; statistics to compute per zone (e.g., c("mean", "sd"))
-#' @param source Character; prefix to append to profile ID (e.g., "SABR")
+#' @param aoi SpatVector or sf object; polygons to extract zonal statistics from
+#' @param zones Character vector; values in the `id_column` to extract (e.g., c("Zone1", "Zone2"))
+#' @param id_column Character; name of column in `aoi` used as profile ID (e.g., id_column = "Name")
+#' @param props Character vector; soil properties to include (e.g., props = c("sand", "clay"))
+#' @param depths Character vector; depth intervals (e.g., depths = c("0-5", "5-15"))
+#' @param new_depths Numeric vector; new depth bins to aggregate to (e.g., c(0, 15, 30))
+#' @param stats Character vector; statistics to compute (e.g., stats = c("mean", "sd"))
+#' @param source Character; string to prefix each profile ID (e.g., source = "SABR")
 #'
-#' @return A named list of SoilProfileCollection objects (e.g., $mean, $sd, etc.)
+#' @return A list of SoilProfileCollections, one per statistic
 #' @export
 sabRzs_to_spc <- function(
   stack = sabr$stack,
@@ -32,7 +31,6 @@ sabRzs_to_spc <- function(
   require(tidyr)
   require(stringr)
 
-  # Depth label -> numeric top/bottom lookup
   depth_lookup <- list(
     "0-5" = c(0, 5),
     "5-15" = c(5, 15),
@@ -48,13 +46,14 @@ sabRzs_to_spc <- function(
     stop("All depths must be one of: ", paste(valid_depths, collapse = ", "))
   }
 
-  # Filter raster stack to desired properties/depths
+  # Filter raster stack to desired layers
   wanted <- unlist(lapply(props, function(p) paste0(p, "_", depths)))
   stack <- stack[[wanted]]
 
-  # Convert AOI to terra SpatVector and subset selected zones
+  # Ensure AOI is a SpatVector and filter to requested zones
   aoi <- terra::vect(aoi)
   aoi_df <- as.data.frame(aoi)
+
   if (!id_column %in% names(aoi_df)) {
     stop("id_column not found in AOI.")
   }
@@ -70,11 +69,18 @@ sabRzs_to_spc <- function(
     # Run zonal stats
     zonal_result <- terra::zonal(stack, aoi_sub, fun = stat)
 
-    # Get IDs from zones (zone = row number)
-    zone_ids <- as.data.frame(aoi_sub)[[id_column]]
-    zonal_result$peiid <- paste0(source, "_", zone_ids[zonal_result$zone])
+    # Fix zone mapping
+    zonal_result$zone <- seq_len(nrow(zonal_result))
+    zone_map <- data.frame(
+      zone = seq_len(nrow(aoi_sub)),
+      id_val = aoi_sub[[id_column]]
+    )
 
-    # Reshape
+    zonal_result <- dplyr::left_join(zonal_result, zone_map, by = "zone") %>%
+      mutate(peiid = paste0(source, "_", id_val)) %>%
+      select(-zone, -id_val)
+
+    # Reshape to long format and add depth info
     long_df <- zonal_result %>%
       pivot_longer(-peiid, names_to = "layer", values_to = "value") %>%
       separate(
@@ -88,34 +94,33 @@ sabRzs_to_spc <- function(
         hzdepb = sapply(depth, function(d) depth_lookup[[d]][2])
       )
 
-    # Wide format
+    # Convert to wide horizon format
     wide_df <- long_df %>%
       select(peiid, hzdept, hzdepb, variable, value) %>%
       pivot_wider(names_from = variable, values_from = value)
 
-    # Construct SPC
     depths(wide_df) <- peiid ~ hzdept + hzdepb
     spc <- wide_df
 
-    # Dice to 1cm slices
+    # Dice and reaggregate to new depth bins
     diced <- dice(
       spc,
-      fm = as.formula(paste(
+      fm = as.formula(paste0(
         "1:",
         max(new_depths),
-        "~",
+        " ~ ",
         paste(props, collapse = " + ")
       )),
       SPC = FALSE
     )
 
-    # Bin and aggregate
     diced$depth_bin <- cut(
       diced$hzdept,
       breaks = new_depths,
       right = FALSE,
       labels = FALSE
     )
+
     bin_table <- data.frame(
       top = new_depths[-length(new_depths)],
       bottom = new_depths[-1],
