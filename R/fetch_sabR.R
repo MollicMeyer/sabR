@@ -136,7 +136,7 @@ fetch_sabR <- function(
     }
 
     aoi <- terra::project(aoi, terra::crs(stack))
-    stack <- terra::mask(terra::crop(stack, aoi), aoi)
+    stack <- terra::crop(stack, terra::ext(aoi))
   }
 
   # Optional resampling
