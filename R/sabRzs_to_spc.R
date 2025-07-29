@@ -62,7 +62,6 @@ sabRzs_to_spc <- function(
     # Attach correct ID to result (terra uses a numeric 'zone' index)
     zonal_result$peiid <- paste0(source, "_", zone_ids[zonal_result$zone])
     long_df <- zonal_result %>%
-      select(-zone) %>%
       pivot_longer(-peiid, names_to = "layer", values_to = "value") %>%
       separate(
         layer,
