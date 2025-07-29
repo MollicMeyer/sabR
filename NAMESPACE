@@ -2,6 +2,8 @@
 
 export(fetch_sabR)
 export(sabRas_to_spc)
+export(sabRpts_to_spc)
+export(sabRzs_to_spc)
 export(sabr.zonalstats)
 import(terra)
 importFrom(aqp,depths)

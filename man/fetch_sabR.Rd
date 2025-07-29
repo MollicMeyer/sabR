@@ -8,7 +8,8 @@ fetch_sabR(
   raster_path = "T:/IA-Kitchen/results/maps/Batch1",
   props = c("sand", "clay", "silt", "TOC", "BD"),
   PSDnormalize = TRUE,
-  clip_shapefile = NULL,
+  aoi = NULL,
+  depths = c("0-5", "5-15", "15-30", "30-60", "60-100", "100-150", "150-200"),
   resample_res = 12,
   resample_method = "bilinear",
   output_dir = NULL
@@ -21,7 +22,10 @@ fetch_sabR(
 
 \item{PSDnormalize}{Logical; whether to use normalized PSD rasters (sand, silt, clay sum to 100\%).}
 
-\item{clip_shapefile}{Optional path to shapefile to clip rasters to.}
+\item{aoi}{Optional area of interest (AOI) for clipping raster stack. Accepts a file path (character), an \code{sf} object, or a \code{SpatVector}.}
+
+\item{depths}{Character vector of depth intervals to include. Must be a subset of:
+"0-5", "5-15", "15-30", "30-60", "60-100", "100-150", "150-200".}
 
 \item{resample_res}{Resolution to resample to (numeric); set to NULL to skip resampling.}
 

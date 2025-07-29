@@ -5,7 +5,7 @@
 \title{Convert Raster Stack to SoilProfileCollection and Aggregate to Standard Depths}
 \usage{
 sabRas_to_spc(
-  rstack,
+  stack = rstack,
   props = c("sand", "clay", "silt", "TOC", "BD"),
   depths = c("0-5", "5-15", "15-30", "30-60", "60-100", "100-150", "150-200"),
   new_depths = c(0, 5, 15, 30, 60, 100, 150, 200),
@@ -13,7 +13,7 @@ sabRas_to_spc(
 )
 }
 \arguments{
-\item{rstack}{A \code{SpatRaster} object where layer names follow the pattern \code{property_depth}, e.g., \code{sand_0-5}.}
+\item{stack}{A \code{SpatRaster} object where layer names follow the pattern \code{property_depth}, e.g., \code{sand_0-5}.}
 
 \item{props}{Character vector of soil properties to include. Must be in the allowed list.}
 
