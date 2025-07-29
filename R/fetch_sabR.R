@@ -6,7 +6,7 @@
 #' @param raster_path Path to directory containing raster folders (e.g., "T:/IA-Kitchen/results/maps").
 #' @param props Character vector of soil properties to load (e.g., "sand", "clay").
 #' @param PSDnormalize Logical; whether to use normalized PSD rasters (sand, silt, clay sum to 100%).
-#' @param clip_shapefile Optional path to shapefile to clip rasters to.
+#' @param aoi Optional area of interest (AOI) for clipping raster stack. Accepts a file path (character), an `sf` object, or a `SpatVector`.
 #' @param resample_res Resolution to resample to (numeric); set to NULL to skip resampling.
 #' @param resample_method Method used for resampling (e.g., "bilinear", "cubic").
 #' @param output_dir Optional path to save combined raster stack (GeoTIFF).
@@ -23,7 +23,7 @@ fetch_sabR <- function(
   raster_path = "T:/IA-Kitchen/results/maps/Batch1",
   props = c("sand", "clay", "silt", "TOC", "BD"),
   PSDnormalize = TRUE,
-  clip_shapefile = NULL,
+  aoi = NULL,
   resample_res = 12,
   resample_method = "bilinear",
   output_dir = NULL
@@ -108,13 +108,22 @@ fetch_sabR <- function(
 
   stack <- do.call(base::c, all_layers)
 
-  if (!is.null(clip_shapefile)) {
-    if (!file.exists(clip_shapefile)) {
-      stop("Shapefile not found at provided path.")
+  # Optional AOI clipping
+  if (!is.null(aoi)) {
+    if (is.character(aoi)) {
+      if (!file.exists(aoi)) {
+        stop("AOI shapefile not found at provided path.")
+      }
+      aoi <- terra::vect(aoi)
+    } else if (inherits(aoi, "sf")) {
+      aoi <- terra::vect(aoi)
+    } else if (!inherits(aoi, "SpatVector")) {
+      stop("AOI must be a file path, an sf object, or a terra::SpatVector.")
     }
-    shape <- terra::vect(clip_shapefile)
-    shape <- terra::project(shape, terra::crs(stack))
-    stack <- terra::mask(terra::crop(stack, shape), shape)
+
+    # Reproject and clip stack
+    aoi <- terra::project(aoi, terra::crs(stack))
+    stack <- terra::mask(terra::crop(stack, aoi), aoi)
   }
 
   if (!is.null(resample_res)) {
