@@ -172,6 +172,7 @@ sabr.zonalstats <- function(
 
   if (wtd.mean) {
     weighted <- result %>%
+      filter(plot %in% plots) %>%
       group_by(soilproperty, plot) %>%
       summarise(
         weighted_mean = sum(mean * weight, na.rm = TRUE) / sum(weight),
