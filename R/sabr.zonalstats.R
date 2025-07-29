@@ -132,7 +132,7 @@ sabr.zonalstats <- function(
             statdf,
             data.frame(
               raster = names(stack),
-              soilproperty = prop,
+              SoilProperty = prop,
               raster_tdepth = d_range[1],
               raster_bdepth = d_range[2],
               tdepth = tdepth,
@@ -155,7 +155,7 @@ sabr.zonalstats <- function(
       overlap = ifelse(overlap < 0, 0, overlap),
       weight = overlap / depth_range
     ) %>%
-    arrange(soilproperty, raster_tdepth)
+    arrange(SoilProperty, raster_tdepth)
 
   # Write unweighted output
   f_out <- paste0(
@@ -173,7 +173,7 @@ sabr.zonalstats <- function(
   if (wtd.mean) {
     weighted <- result %>%
       filter(plot %in% plots) %>%
-      group_by(soilproperty, plot) %>%
+      group_by(SoilProperty, plot) %>%
       summarise(
         weighted_mean = sum(mean * weight, na.rm = TRUE) / sum(weight),
         max = max(mean, na.rm = TRUE),
