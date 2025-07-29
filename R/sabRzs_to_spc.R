@@ -1,23 +1,23 @@
 #' Convert Zonal Statistics from Polygons to SoilProfileCollection
 #'
-#' Computes zonal summary statistics for polygons and converts them to SoilProfileCollection.
+#' Computes zonal summary statistics for polygons and converts them to a list of SoilProfileCollections.
 #'
-#' @param stack SpatRaster; the raster stack (e.g., output from `fetch_sabR()$stack`)
-#' @param aoi Character path, sf object, SpatVector, or SpatRaster; the area of interest (polygons or extent)
-#' @param zones Character vector; values in the `id_column` to extract (e.g., c("Zone1", "Zone2"))
-#' @param id_column Character; name of column in `aoi` used as profile ID (e.g., id_column = "Name")
-#' @param props Character vector; soil properties to include (e.g., props = c("sand", "clay"))
-#' @param depths Character vector; depth intervals (e.g., depths = c("0-5", "5-15"))
-#' @param new_depths Numeric vector; new depth bins to aggregate to (e.g., c(0, 15, 30))
-#' @param stats Character vector; statistics to compute (e.g., stats = c("mean", "sd"))
-#' @param source Character; string to prefix each profile ID (e.g., source = "SABR")
+#' @param stack SpatRaster; raster stack of SABR properties.
+#' @param aoi Character path to shapefile, or an `sf`, `SpatVector`, or `SpatRaster` object.
+#' @param zones Character vector; values in the `id_column` to subset from the AOI.
+#' @param id_column Character; column name in AOI used for profile ID (e.g., "Name").
+#' @param props Character vector; soil properties to include (e.g., c("sand", "clay")).
+#' @param depths Character vector; depth intervals to include (e.g., c("0-5", "5-15")).
+#' @param new_depths Numeric vector; target depth bins to aggregate into (e.g., c(0, 20, 40, 60)).
+#' @param stats Character vector; statistics to compute via zonal stats (e.g., c("mean", "sd")).
+#' @param source Character; prefix string for profile ID (e.g., "SABR").
 #'
-#' @return A list of SoilProfileCollections, one per statistic
+#' @return A named list of SoilProfileCollections (e.g., $mean, $sd).
 #' @export
 sabRzs_to_spc <- function(
   stack = sabr$stack,
-  aoi = NULL,
-  zones = NULL,
+  aoi = plots,
+  zones = c("NW_plot", "SE_plot"),
   id_column = "Name",
   props = c("sand", "clay"),
   depths = c("0-5", "5-15"),
@@ -31,7 +31,6 @@ sabRzs_to_spc <- function(
   require(tidyr)
   require(stringr)
 
-  # Validate depths
   depth_lookup <- list(
     "0-5" = c(0, 5),
     "5-15" = c(5, 15),
@@ -41,73 +40,63 @@ sabRzs_to_spc <- function(
     "100-150" = c(100, 150),
     "150-200" = c(150, 200)
   )
+
   valid_depths <- names(depth_lookup)
   if (!all(depths %in% valid_depths)) {
     stop("All depths must be one of: ", paste(valid_depths, collapse = ", "))
   }
 
-  # Subset raster
   wanted <- unlist(lapply(props, function(p) paste0(p, "_", depths)))
   stack <- stack[[wanted]]
 
-  # Load and coerce AOI
+  # Load or convert AOI
   if (is.character(aoi)) {
-    if (!file.exists(aoi)) {
-      stop("Shapefile not found at provided path.")
-    }
     aoi <- terra::vect(aoi)
   } else if (inherits(aoi, "sf")) {
     aoi <- terra::vect(aoi)
   } else if (inherits(aoi, "SpatRaster")) {
     aoi <- terra::as.polygons(aoi)
   } else if (!inherits(aoi, "SpatVector")) {
-    stop("aoi must be a path, sf, SpatVector, or SpatRaster.")
+    stop("`aoi` must be a file path, sf object, SpatVector, or SpatRaster.")
   }
 
-  # Reproject AOI to match raster
-  aoi <- terra::project(aoi, terra::crs(stack))
+  # CRS align
+  if (!terra::compareCRS(stack, aoi)) {
+    aoi <- terra::project(aoi, terra::crs(stack))
+  }
+
   aoi_df <- as.data.frame(aoi)
 
   if (!id_column %in% names(aoi_df)) {
     stop("id_column not found in AOI.")
   }
-
-  if (!is.null(zones)) {
-    if (!all(zones %in% aoi_df[[id_column]])) {
-      stop("Some requested zones not found in AOI.")
-    }
-    aoi_sub <- aoi[aoi_df[[id_column]] %in% zones, ]
-    zone_ids <- as.character(aoi_df[[id_column]][
-      aoi_df[[id_column]] %in% zones
-    ])
-  } else {
-    aoi_sub <- aoi
-    zone_ids <- as.character(aoi_df[[id_column]])
+  if (!all(zones %in% aoi_df[[id_column]])) {
+    stop("Some requested zones not found in AOI.")
   }
+
+  aoi_sub <- aoi[aoi_df[[id_column]] %in% zones, ]
 
   result_list <- list()
 
   for (stat in stats) {
     zonal_result <- terra::zonal(stack, aoi_sub, fun = stat)
 
-    # Validate and assign zone index
     if (!"zone" %in% names(zonal_result)) {
       zonal_result$zone <- seq_len(nrow(zonal_result))
     }
 
-    # Ensure zone_ids is long enough
-    if (length(zone_ids) < max(zonal_result$zone)) {
-      stop(
-        "Zone ID mapping mismatch. Check that aoi_sub matches zonal result order."
-      )
-    }
+    zone_map <- data.frame(
+      zone = seq_len(nrow(aoi_sub)),
+      id_val = as.character(aoi_sub[[id_column]])
+    )
 
-    # Construct peiid
-    zonal_result$peiid <- paste0(source, "_", zone_ids[zonal_result$zone])
+    zonal_result <- dplyr::left_join(zonal_result, zone_map, by = "zone")
+    zonal_result$peiid <- paste0(source, "_", zonal_result$id_val)
 
-    # Long format and prep for SPC
+    zonal_result <- zonal_result %>%
+      select(-zone, -id_val)
+
     long_df <- zonal_result %>%
-      select(-zone) %>%
       pivot_longer(-peiid, names_to = "layer", values_to = "value") %>%
       separate(
         layer,
@@ -137,6 +126,10 @@ sabRzs_to_spc <- function(
       )),
       SPC = FALSE
     )
+
+    # ✨ FIX: Remove slices outside new depth bins
+    diced <- diced %>%
+      filter(hzdept >= min(new_depths) & hzdept < max(new_depths))
 
     diced$depth_bin <- cut(
       diced$hzdept,
