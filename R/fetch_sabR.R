@@ -7,6 +7,8 @@
 #' @param props Character vector of soil properties to load (e.g., "sand", "clay").
 #' @param PSDnormalize Logical; whether to use normalized PSD rasters (sand, silt, clay sum to 100%).
 #' @param aoi Optional area of interest (AOI) for clipping raster stack. Accepts a file path (character), an `sf` object, or a `SpatVector`.
+#' @param depths Character vector of depth intervals to include. Must be a subset of:
+#'   "0-5", "5-15", "15-30", "30-60", "60-100", "100-150", "150-200".
 #' @param resample_res Resolution to resample to (numeric); set to NULL to skip resampling.
 #' @param resample_method Method used for resampling (e.g., "bilinear", "cubic").
 #' @param output_dir Optional path to save combined raster stack (GeoTIFF).
@@ -24,6 +26,7 @@ fetch_sabR <- function(
   props = c("sand", "clay", "silt", "TOC", "BD"),
   PSDnormalize = TRUE,
   aoi = NULL,
+  depths = c("0-5", "5-15", "15-30", "30-60", "60-100", "100-150", "150-200"),
   resample_res = 12,
   resample_method = "bilinear",
   output_dir = NULL
@@ -52,16 +55,7 @@ fetch_sabR <- function(
     "Total_N"
   )
 
-  if (any(!props %in% allowed_attrs)) {
-    warning(paste(
-      "Warning: The following soil property map(s) don't exist:",
-      paste("(", props[!props %in% allowed_attrs], ")", collapse = ", "),
-      "Please check your spelling."
-    ))
-    props <- props[props %in% allowed_attrs]
-  }
-
-  depth_intervals <- list(
+  allowed_depths <- list(
     `0_5` = "0-5",
     `5_15` = "5-15",
     `15_30` = "15-30",
@@ -70,6 +64,23 @@ fetch_sabR <- function(
     `100_150` = "100-150",
     `150_200` = "150-200"
   )
+
+  # Validate props
+  if (any(!props %in% allowed_attrs)) {
+    warning(paste(
+      "Warning: Invalid soil properties:",
+      paste(props[!props %in% allowed_attrs], collapse = ", ")
+    ))
+    props <- props[props %in% allowed_attrs]
+  }
+
+  # Validate depths
+  if (any(!depths %in% allowed_depths)) {
+    stop(
+      "Invalid depths requested. Must be subset of: ",
+      paste(unname(allowed_depths), collapse = ", ")
+    )
+  }
 
   all_layers <- list()
   file_paths <- list()
@@ -89,10 +100,13 @@ fetch_sabR <- function(
     )
     raster_files <- grep(prop, raster_files, value = TRUE, fixed = TRUE)
 
-    for (depth_code in names(depth_intervals)) {
-      depth_str <- depth_intervals[[depth_code]]
-      depth_file <- grep(depth_code, raster_files, value = TRUE, fixed = TRUE)
+    for (depth_code in names(allowed_depths)) {
+      depth_str <- allowed_depths[[depth_code]]
+      if (!(depth_str %in% depths)) {
+        next
+      }
 
+      depth_file <- grep(depth_code, raster_files, value = TRUE, fixed = TRUE)
       if (length(depth_file) > 0) {
         r <- rast(depth_file[1])
         names(r) <- paste0(prop, "_", depth_str)
@@ -103,36 +117,34 @@ fetch_sabR <- function(
   }
 
   if (length(all_layers) == 0) {
-    stop("No raster layers were found for the requested properties.")
+    stop("No matching raster layers were found.")
   }
 
   stack <- do.call(base::c, all_layers)
 
-  # Optional AOI clipping
+  # Handle AOI input (sf, SpatVector, or file path)
   if (!is.null(aoi)) {
     if (is.character(aoi)) {
       if (!file.exists(aoi)) {
-        stop("AOI shapefile not found at provided path.")
+        stop("AOI shapefile path does not exist.")
       }
       aoi <- terra::vect(aoi)
     } else if (inherits(aoi, "sf")) {
       aoi <- terra::vect(aoi)
     } else if (!inherits(aoi, "SpatVector")) {
-      stop("AOI must be a file path, an sf object, or a terra::SpatVector.")
+      stop("AOI must be a path, an sf object, or a SpatVector.")
     }
 
-    # Reproject and clip stack
     aoi <- terra::project(aoi, terra::crs(stack))
     stack <- terra::mask(terra::crop(stack, aoi), aoi)
   }
 
+  # Optional resampling
   if (!is.null(resample_res)) {
-    ext <- terra::ext(stack)
-    crs_val <- terra::crs(stack)
     template <- terra::rast(
-      extent = ext,
+      extent = terra::ext(stack),
       resolution = resample_res,
-      crs = crs_val
+      crs = terra::crs(stack)
     )
     stack <- terra::resample(stack, template, method = resample_method)
   }
