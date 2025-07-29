@@ -96,7 +96,7 @@ sabRas_to_spc <- function(
   )
 
   # Convert raster to data.frame
-  pt_df <- as.data.frame(rstack, xy = TRUE, cells = TRUE, na.rm = TRUE)
+  pt_df <- as.data.frame(stack, xy = TRUE, cells = TRUE, na.rm = TRUE)
   pt_df$peiid <- paste0("cell_", pt_df$cell, "_", source)
 
   # Site-level metadata
