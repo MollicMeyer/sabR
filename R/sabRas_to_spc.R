@@ -3,7 +3,7 @@
 #' Converts a stack of soil property rasters into an `aqp::SoilProfileCollection` object,
 #' then aggregates values to user-defined standard depth intervals.
 #'
-#' @param rstack A `SpatRaster` object where layer names follow the pattern `property_depth`, e.g., `sand_0-5`.
+#' @param stack A `SpatRaster` object where layer names follow the pattern `property_depth`, e.g., `sand_0-5`.
 #' @param props Character vector of soil properties to include. Must be in the allowed list.
 #' @param depths Character vector of raster depth intervals to include. Must be subset of:
 #' `"0-5"`, `"5-15"`, `"15-30"`, `"30-60"`, `"60-100"`, `"100-150"`, `"150-200"`.
@@ -25,7 +25,7 @@
 #' @importFrom aqp depths site horizonNames idname dice
 #' @export
 sabRas_to_spc <- function(
-  rstack,
+  stack = rstack,
   props = c("sand", "clay", "silt", "TOC", "BD"),
   depths = c("0-5", "5-15", "15-30", "30-60", "60-100", "100-150", "150-200"),
   new_depths = c(0, 5, 15, 30, 60, 100, 150, 200),
