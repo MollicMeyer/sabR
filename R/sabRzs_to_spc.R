@@ -61,7 +61,7 @@ sabRzs_to_spc <- function(
   }
 
   # CRS align
-  if (!terra::compareCRS(stack, aoi)) {
+  if (terra::crs(stack) != terra::crs(aoi)) {
     aoi <- terra::project(aoi, terra::crs(stack))
   }
 
@@ -127,7 +127,7 @@ sabRzs_to_spc <- function(
       SPC = FALSE
     )
 
-    # ✨ FIX: Remove slices outside new depth bins
+    #Remove slices outside new depth bins
     diced <- diced %>%
       filter(hzdept >= min(new_depths) & hzdept < max(new_depths))
 
