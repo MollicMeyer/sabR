@@ -14,8 +14,8 @@
 #' @return A list of SoilProfileCollections, one per statistic (e.g., $mean, $sd)
 #' @export
 sabRzs_to_spc <- function(
-  stack,
-  zones,
+  stack = sabr$stack,
+  zones = plots,
   id_column = "Name",
   props = c("sand", "clay"),
   depths = c("0-5", "5-15"),
