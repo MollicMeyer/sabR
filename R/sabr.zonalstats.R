@@ -78,16 +78,15 @@ sabr.zonalstats <- function(
 
   shapes$Name <- as.character(shapes$Name)
   plots <- as.character(plots)
-    for (plot in plots) {
-      poly <- shapes[shapes$Name == plot, ]
+  for (plot in plots) {
+    poly <- shapes[shapes$Name == plot, ]
 
-      if (nrow(poly) == 0) {
-        warning(paste0("Plot '", plot, "' not found in shapes$Name. Skipping..."))
-        next
-      }
-
-      poly <- terra::vect(sf::st_geometry(poly))
+    if (nrow(poly) == 0) {
+      warning(paste0("Plot '", plot, "' not found in shapes$Name. Skipping..."))
+      next
     }
+
+    poly <- terra::vect(sf::st_geometry(poly))
 
     for (prop in props) {
       base_dir <- if (PSDnormalize && prop %in% c("sand", "silt", "clay")) {
