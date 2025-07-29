@@ -61,38 +61,38 @@ sabRpts_to_spc <- function(
   # Reproject to raster CRS
   pts <- terra::project(pts, terra::crs(stack))
 
-  vals <- terra::extract(stack, pts)
+  # Remove `.row` column if present
+  vals <- vals[, !names(vals) %in% ".row", drop = FALSE]
 
-  # Remove .row if present
-  if (".row" %in% names(vals)) {
-    vals <- vals[, !names(vals) %in% ".row"]
-  }
-
-  # Assign character peiid
+  # Add ID
   vals$peiid <- paste0(source, "_pt_", seq_len(nrow(vals)))
 
-  # Long -> wide -> SPC
+  # Reshape and split variable names
   long_df <- vals %>%
-    pivot_longer(-peiid, names_to = "layer", values_to = "value") %>%
+    pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
+    filter(!is.na(value)) %>%
     separate(
       layer,
       into = c("variable", "depth"),
       sep = "_(?=\\d)",
       remove = FALSE
     ) %>%
+    filter(depth %in% names(depth_lookup)) %>%
     mutate(
-      hzdept = sapply(depth, function(d) depth_lookup[[d]][1]),
-      hzdepb = sapply(depth, function(d) depth_lookup[[d]][2])
+      hzdept = vapply(depth, function(d) depth_lookup[[d]][1], numeric(1)),
+      hzdepb = vapply(depth, function(d) depth_lookup[[d]][2], numeric(1))
     )
 
+  # Wide format
   wide_df <- long_df %>%
     select(peiid, hzdept, hzdepb, variable, value) %>%
     pivot_wider(names_from = variable, values_from = value)
 
+  # Create SPC
   depths(wide_df) <- peiid ~ hzdept + hzdepb
   spc <- wide_df
 
-  # Dice to 1cm, filter to bins
+  # Slice to 1cm
   diced <- dice(
     spc,
     fm = as.formula(paste0(
@@ -103,26 +103,32 @@ sabRpts_to_spc <- function(
     )),
     SPC = FALSE
   )
+
+  # Filter out NA-sliced layers
   diced <- diced %>%
     filter(hzdept >= min(new_depths) & hzdept < max(new_depths))
 
+  # Bin to new depths
   diced$depth_bin <- cut(
     diced$hzdept,
     breaks = new_depths,
     right = FALSE,
     labels = FALSE
   )
+
   bin_table <- data.frame(
     top = new_depths[-length(new_depths)],
     bottom = new_depths[-1],
     depth_bin = seq_along(new_depths[-1])
   )
 
+  # Aggregate
   agg <- diced %>%
     left_join(bin_table, by = "depth_bin") %>%
     group_by(peiid, top, bottom) %>%
     summarise(across(all_of(props), ~ mean(.x, na.rm = TRUE)), .groups = "drop")
 
+  # Final SPC
   depths(agg) <- peiid ~ top + bottom
   site(agg) <- data.frame(peiid = unique(agg$peiid))
 
