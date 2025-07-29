@@ -66,23 +66,30 @@ sabRzs_to_spc <- function(
   result_list <- list()
 
   for (stat in stats) {
-    # Run zonal stats
-    # terra::zonal returns a data.frame with a 'zone' column matching row numbers
     zonal_result <- terra::zonal(stack, aoi_sub, fun = stat)
 
-    # Add zone number explicitly in case it's not returned (some terra versions)
+    # Ensure zone column exists
     if (!"zone" %in% names(zonal_result)) {
       zonal_result$zone <- seq_len(nrow(zonal_result))
     }
 
+    # Create mapping between zone numbers and actual ID values
     zone_map <- data.frame(
       zone = seq_len(nrow(aoi_sub)),
-      id_val = aoi_sub[[id_column]]
+      id_val = as.character(aoi_sub[[id_column]])
     )
 
-    zonal_result <- left_join(zonal_result, zone_map, by = "zone")
+    # Safe join
+    zonal_result <- dplyr::left_join(zonal_result, zone_map, by = "zone")
 
-    # Now mutate safely
+    # Check if id_val was added successfully
+    if (!"id_val" %in% names(zonal_result)) {
+      stop(
+        "Failed to join zone IDs to zonal statistics. Check that `id_column` is correct."
+      )
+    }
+
+    # Now mutate to add peiid
     zonal_result <- zonal_result %>%
       mutate(peiid = paste0(source, "_", id_val)) %>%
       select(-zone, -id_val)
