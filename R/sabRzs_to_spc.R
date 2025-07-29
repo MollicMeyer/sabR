@@ -53,9 +53,16 @@ sabRzs_to_spc <- function(
   result_list <- list()
 
   for (stat in stats) {
+    # Perform zonal stats
     zonal_result <- terra::zonal(stack, zones, fun = stat)
+
+    # Extract zone ID column from zones
+    zone_ids <- as.data.frame(zones)[[id_column]]
+
+    # Attach correct ID to result (terra uses a numeric 'zone' index)
+    zonal_result$peiid <- paste0(source, "_", zone_ids[zonal_result$zone])
     long_df <- zonal_result %>%
-      rename(peiid = !!id_column) %>%
+      select(-zone) %>%
       pivot_longer(-peiid, names_to = "layer", values_to = "value") %>%
       separate(
         layer,
