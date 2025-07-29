@@ -76,7 +76,7 @@ sabRzs_to_spc <- function(
 
     # Reshape
     long_df <- zonal_result %>%
-      pivot_longer(-c(zone, peiid), names_to = "layer", values_to = "value") %>%
+      pivot_longer(-peiid, names_to = "layer", values_to = "value") %>%
       separate(
         layer,
         into = c("variable", "depth"),
