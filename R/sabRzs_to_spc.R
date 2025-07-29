@@ -72,7 +72,6 @@ sabRzs_to_spc <- function(
       mutate(
         hzdept = sapply(depth, function(d) depth_lookup[[d]][1]),
         hzdepb = sapply(depth, function(d) depth_lookup[[d]][2]),
-        peiid = paste0(source, "_", peiid)
       )
 
     wide_df <- long_df %>%
