@@ -72,6 +72,7 @@ sabRpts_to_spc <- function(
 
   # Reshape and split variable names
   long_df <- vals %>%
+    select(-ID) %>%
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
     filter(!is.na(value)) %>%
     separate(
