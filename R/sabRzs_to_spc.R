@@ -91,7 +91,7 @@ sabRzs_to_spc <- function(
 
     # Now mutate to add peiid
     zonal_result <- zonal_result %>%
-      mutate(peiid = paste0(source, "_", id_val)) %>%
+      mutate(peiid = paste0(source, "_", zonal_result$id_val)) %>%
       select(-zone, -id_val)
 
     # Reshape to long format and add depth info
