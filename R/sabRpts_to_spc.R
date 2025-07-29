@@ -3,7 +3,7 @@
 #' Converts raster data at specified point locations into a SoilProfileCollection.
 #'
 #' @param stack SpatRaster; the raster stack to extract values from (e.g., output from `fetch_sabR()$stack`)
-#' @param pts SpatVector or sf object; spatial points for extraction
+#' @param pts Character path, sf object, SpatVector, or SpatRaster; spatial points for extraction
 #' @param props Character vector; soil properties to include (e.g., props = c("sand", "clay"))
 #' @param depths Character vector; depth intervals to use (e.g., depths = c("0-5", "5-15"))
 #' @param new_depths Numeric vector; new standard horizons (e.g., new_depths = c(0, 20, 40, 60))
@@ -40,17 +40,34 @@ sabRpts_to_spc <- function(
     stop("All depths must be one of: ", paste(valid_depths, collapse = ", "))
   }
 
-  lyrnames <- names(stack)
+  # Subset stack to desired layers
   wanted <- unlist(lapply(props, function(p) paste0(p, "_", depths)))
   stack <- stack[[wanted]]
 
-  # Extract raster values at point locations
+  # Coerce pts to SpatVector
+  if (is.character(pts)) {
+    if (!file.exists(pts)) {
+      stop("File does not exist at the provided path.")
+    }
+    pts <- terra::vect(pts)
+  } else if (inherits(pts, "sf")) {
+    pts <- terra::vect(pts)
+  } else if (inherits(pts, "SpatRaster")) {
+    pts <- terra::as.points(pts)
+  } else if (!inherits(pts, "SpatVector")) {
+    stop("pts must be a path, sf, SpatVector, or SpatRaster.")
+  }
+
+  # Reproject to raster CRS
+  pts <- terra::project(pts, terra::crs(stack))
+
+  # Extract raster values at points
   vals <- terra::extract(stack, pts)
 
-  # Create peiid from row number
+  # Add peiid
   vals$peiid <- paste0(source, "_pt_", seq_len(nrow(vals)))
 
-  # Convert to long and join with depth lookup
+  # Long -> wide -> SPC
   long_df <- vals %>%
     pivot_longer(-peiid, names_to = "layer", values_to = "value") %>%
     separate(
@@ -68,44 +85,36 @@ sabRpts_to_spc <- function(
     select(peiid, hzdept, hzdepb, variable, value) %>%
     pivot_wider(names_from = variable, values_from = value)
 
-  # Convert to SPC and aggregate
   depths(wide_df) <- peiid ~ hzdept + hzdepb
   spc <- wide_df
-  spc <- dice(
-    spc,
-    fm = as.formula(paste(
-      "1:",
-      max(new_depths),
-      "~",
-      paste(props, collapse = " + ")
-    )),
-    SPC = TRUE
-  )
 
-  binned <- dice(
+  # Dice to 1cm, filter to bins
+  diced <- dice(
     spc,
-    fm = as.formula(paste(
+    fm = as.formula(paste0(
       "1:",
       max(new_depths),
-      "~",
+      " ~ ",
       paste(props, collapse = " + ")
     )),
     SPC = FALSE
   )
-  binned$depth_bin <- cut(
-    binned$hzdept,
+  diced <- diced %>%
+    filter(hzdept >= min(new_depths) & hzdept < max(new_depths))
+
+  diced$depth_bin <- cut(
+    diced$hzdept,
     breaks = new_depths,
     right = FALSE,
     labels = FALSE
   )
-
   bin_table <- data.frame(
     top = new_depths[-length(new_depths)],
     bottom = new_depths[-1],
     depth_bin = seq_along(new_depths[-1])
   )
 
-  agg <- binned %>%
+  agg <- diced %>%
     left_join(bin_table, by = "depth_bin") %>%
     group_by(peiid, top, bottom) %>%
     summarise(across(all_of(props), ~ mean(.x, na.rm = TRUE)), .groups = "drop")
