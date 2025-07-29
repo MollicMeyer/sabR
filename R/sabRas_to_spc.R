@@ -20,7 +20,7 @@
 #' - Internally, raster values are reshaped, converted to SPC, diced to 1cm slices, and re-aggregated using means.
 #'
 #' @import terra
-#' @importFrom dplyr select mutate group_by summarise filter across ungroup arrange left_join
+#' @importFrom dplyr select mutate group_by summarise filter across ungroup arrange left_join rowwise
 #' @importFrom tidyr pivot_longer pivot_wider separate
 #' @importFrom aqp depths site horizonNames idname dice
 #' @export
