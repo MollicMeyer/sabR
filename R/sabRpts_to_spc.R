@@ -61,6 +61,9 @@ sabRpts_to_spc <- function(
   # Reproject to raster CRS
   pts <- terra::project(pts, terra::crs(stack))
 
+  # Extract values
+  vals <- terra::extract(stack, pts)
+
   # Remove `.row` column if present
   vals <- vals[, !names(vals) %in% ".row", drop = FALSE]
 
