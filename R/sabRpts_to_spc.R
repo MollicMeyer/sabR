@@ -61,10 +61,14 @@ sabRpts_to_spc <- function(
   # Reproject to raster CRS
   pts <- terra::project(pts, terra::crs(stack))
 
-  # Extract raster values at points
   vals <- terra::extract(stack, pts)
 
-  # Add peiid
+  # Remove .row if present
+  if (".row" %in% names(vals)) {
+    vals <- vals[, !names(vals) %in% ".row"]
+  }
+
+  # Assign character peiid
   vals$peiid <- paste0(source, "_pt_", seq_len(nrow(vals)))
 
   # Long -> wide -> SPC
