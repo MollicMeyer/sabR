@@ -1,0 +1,29 @@
+Package: sabR
+Title: Soil Property Raster Tools for Sustainable Advanced Bioeconomy Research Farms
+Version: 0.0.1
+Authors@R: 
+    person("Meyer", "Bohn", 
+           email = "mpbohn@iastate.edu", 
+           role = c("aut", "cre"))
+Description: Tools for working with locally stored digital soil raster maps developed as part of the Sustainable Advanced Bioeconomy Research (sabR) project. Includes functions for zonal statistics, depth-weighted aggregation, and conversion of raster data to SoilProfileCollection objects.
+License: CC-BY-4.0
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.1
+Depends: 
+    R (>= 4.3.0)
+Imports:
+    terra,
+    sf,
+    dplyr,
+    tidyr,
+    aqp,
+    stringr,
+    tibble
+Suggests: 
+    devtools,
+    testthat,
+    ggplot2
+BugReports: https://github.com/mpbohn/sabR/issues
+URL: https://github.com/mpbohn/sabR
