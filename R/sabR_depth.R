@@ -108,7 +108,12 @@ sabR_depth <- function(
     slab.fun = slab_fun
   )
 
-  slab_df$source <- factor(slab_df$source)
+  if (!"source" %in% names(slab_df)) {
+    stop("Missing `source` column in slab_df")
+  }
+  if (!is.factor(slab_df$source)) {
+    slab_df$source <- factor(slab_df$source)
+  }
 
   # Set color palette
   okabe_ito <- c(
@@ -141,7 +146,7 @@ sabR_depth <- function(
     data = slab_df,
     lower = slab_df$lower,
     upper = slab_df$upper,
-    groups = slab_df[["source"]],
+    groups = source,
     sync.colors = TRUE,
     alpha = 0.5,
     ylab = "Depth (cm)",
