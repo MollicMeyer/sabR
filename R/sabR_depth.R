@@ -1,0 +1,149 @@
+#' Plot Grouped Depth Functions from a SoilProfileCollection
+#'
+#' Generate depth function plots for selected soil properties across optional groupings.
+#'
+#' @param spc A `SoilProfileCollection` object.
+#' @param variables Character vector of soil properties to include in plots.
+#' @param slab_structure Numeric vector of horizon breaks (e.g., `c(0, 20, 40, 60)`).
+#' @param group_id Optional character string; the name of the column in `site(spc)` to use as grouping factor.
+#' @param stat Character; type of summary to plot. Options:
+#'   - `"mean_sd"`: mean ± standard deviation
+#'   - `"med_sd"`: median ± standard deviation
+#'   - `"med_qr"`: median ± interquartile range
+#'   - `"med_pr"`: median ± user-specified percentiles
+#' @param intervals Numeric vector of length 2; used when `stat = "med_pr"` or `"med_qr"` to define lower and upper bounds (e.g., `c(5, 95)` or `c(25, 75)`).
+#'
+#' @return A `lattice` plot of depth functions faceted by variable and grouped by the optional `group_id`.
+#'
+#' @details
+#' - If `group_id` is `NULL`, all profiles are treated as a single group.
+#' - Only supports up to 8 unique group levels due to color palette constraints.
+#' - Automatically sets `source` factor based on `group_id`.
+#' - Interval labeling adjusts to match selected `stat` type.
+#'
+#' @import aqp
+#' @import lattice
+#' @importFrom dplyr select mutate
+#' @export
+sabR_depth <- function(
+  spc,
+  variables = c("sand", "clay", "TOC", "pH"),
+  slab_structure = c(0, 20, 40, 60),
+  group_id = NULL,
+  stat = "mean_sd",
+  intervals = c(5, 95)
+) {
+  if (!inherits(spc, "SoilProfileCollection")) {
+    stop("`spc` must be a SoilProfileCollection object.")
+  }
+
+  # Validate inputs
+  stat_options <- c("mean_sd", "med_sd", "med_qr", "med_pr")
+  if (!stat %in% stat_options) {
+    stop("Invalid `stat`. Choose from: ", paste(stat_options, collapse = ", "))
+  }
+
+  if (!is.null(group_id)) {
+    if (!group_id %in% names(site(spc))) {
+      stop(paste0("`", group_id, "` not found in site(spc)."))
+    }
+    site(spc)$source <- as.factor(site(spc)[[group_id]])
+  } else {
+    site(spc)$source <- factor("All Profiles")
+  }
+
+  n_groups <- length(unique(site(spc)$source))
+  if (n_groups > 8) {
+    stop("Too many groups: this function supports up to 8 groups for plotting.")
+  }
+
+  # Define statistical summaries
+  slab_fun <- switch(
+    stat,
+    "mean_sd" = function(x) {
+      m <- mean(x, na.rm = TRUE)
+      s <- sd(x, na.rm = TRUE)
+      c(mean = m, lower = m - s, upper = m + s)
+    },
+    "med_sd" = function(x) {
+      m <- median(x, na.rm = TRUE)
+      s <- sd(x, na.rm = TRUE)
+      c(median = m, lower = m - s, upper = m + s)
+    },
+    "med_qr" = function(x) {
+      q <- quantile(x, probs = c(0.25, 0.75), na.rm = TRUE)
+      m <- median(x, na.rm = TRUE)
+      c(median = m, lower = q[1], upper = q[2])
+    },
+    "med_pr" = function(x) {
+      probs <- intervals / 100
+      p <- quantile(x, probs = probs, na.rm = TRUE)
+      m <- median(x, na.rm = TRUE)
+      c(median = m, lower = p[1], upper = p[2])
+    }
+  )
+
+  # Run slab
+  slab_df <- slab(
+    spc,
+    fm = as.formula(paste0(
+      "site(source) ~ ",
+      paste(variables, collapse = " + ")
+    )),
+    slab.structure = slab_structure,
+    slab.fun = slab_fun
+  )
+
+  slab_df$source <- factor(slab_df$source)
+
+  # Set color palette
+  okabe_ito <- c(
+    "#E69F00",
+    "#56B4E9",
+    "#009E73",
+    "#F0E442",
+    "#0072B2",
+    "#D55E00",
+    "#CC79A7",
+    "#999999"
+  )
+  palette_colors <- okabe_ito[seq_len(n_groups)]
+
+  # Force slab bottom to 0 for top slice
+  slab_df$bottom[slab_df$top == 0] <- 0
+
+  # Plot label logic
+  label_map <- list(
+    "mean_sd" = "Mean ± SD",
+    "med_sd" = "Median ± SD",
+    "med_qr" = "Median ± IQR",
+    "med_pr" = paste0("Median ± P", intervals[1], "-", intervals[2])
+  )
+  y_label <- label_map[[stat]]
+
+  # Generate plot
+  xyplot(
+    bottom ~ mean | variable,
+    data = slab_df,
+    lower = slab_df$lower,
+    upper = slab_df$upper,
+    groups = source,
+    sync.colors = TRUE,
+    alpha = 0.5,
+    ylab = "Depth (cm)",
+    xlab = y_label,
+    ylim = c(max(slab_structure), 0),
+    layout = c(length(variables), 1),
+    scales = list(
+      x = list(tick.number = 4, alternating = 2, relation = 'free'),
+      y = list(tick.number = 6, alternating = 3, relation = 'free')
+    ),
+    par.settings = list(
+      superpose.line = list(lwd = 3, col = palette_colors, lty = 1)
+    ),
+    panel = panel.depth_function,
+    prepanel = prepanel.depth_function,
+    strip = strip.custom(bg = grey(0.9)),
+    auto.key = list(columns = 2, lines = TRUE, points = FALSE)
+  )
+}
