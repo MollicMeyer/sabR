@@ -157,9 +157,16 @@ sabRpts_to_spc <- function(
     summarise(across(all_of(props), ~ mean(.x, na.rm = TRUE)), .groups = "drop")
 
   depths(agg) <- peiid ~ top + bottom
-  site(agg) <- data.frame(
-    peiid = agg$peiid,
-    group_id = vals$group_id
+  # Get unique peiid-group_id pairs from `vals`
+  site_info <- vals %>%
+    dplyr::select(peiid, group_id) %>%
+    dplyr::distinct()
+
+  # Join to ensure correct row alignment
+  site(agg) <- dplyr::left_join(
+    data.frame(peiid = unique(agg$peiid)),
+    site_info,
+    by = "peiid"
   )
 
   return(agg)
