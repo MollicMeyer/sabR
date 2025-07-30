@@ -9,7 +9,9 @@ sabRas_to_spc(
   props = c("sand", "clay", "silt", "TOC", "BD"),
   depths = c("0-5", "5-15", "15-30", "30-60", "60-100", "100-150", "150-200"),
   new_depths = c(0, 5, 15, 30, 60, 100, 150, 200),
-  source = "SABR"
+  source = "SABR",
+  group_poly = NULL,
+  id_column = NULL
 )
 }
 \arguments{
@@ -17,12 +19,16 @@ sabRas_to_spc(
 
 \item{props}{Character vector; soil properties to include (e.g., \code{"sand"}, \code{"clay"}).}
 
-\item{depths}{Character vector; raster depth intervals to include (e.g., \code{"0-5"}, \code{"5-15"}). Must be a subset of:
+\item{depths}{Character vector; raster depth intervals to include. Must be a subset of:
 \code{"0-5"}, \code{"5-15"}, \code{"15-30"}, \code{"30-60"}, \code{"60-100"}, \code{"100-150"}, \code{"150-200"}.}
 
 \item{new_depths}{Numeric vector; standard depths (in cm) to aggregate to, e.g., \code{c(0, 15, 30, 60, 100)}.}
 
 \item{source}{Character; optional prefix for profile IDs (e.g., \code{"SABR"}).}
+
+\item{group_poly}{Optional; sf, SpatVector, or character path to polygon shapefile for assigning group IDs.}
+
+\item{id_column}{Optional; name of column in \code{group_poly} to use for group assignment.}
 }
 \value{
 A \code{SoilProfileCollection} aggregated to the specified \code{new_depths}.

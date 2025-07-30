@@ -6,7 +6,7 @@ Authors@R:
            email = "mpbohn@iastate.edu", 
            role = c("aut", "cre"))
 Description: Tools for working with locally stored digital soil raster maps developed as part of the Sustainable Advanced Bioeconomy Research (sabR) project. Includes functions for zonal statistics, depth-weighted aggregation, and conversion of raster data to SoilProfileCollection objects.
-License: CC-BY-4.0
+License: CC BY 4.0
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)

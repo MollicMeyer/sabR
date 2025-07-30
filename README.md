@@ -1,10 +1,11 @@
-# 🧪 sabR: Example Workflow
+# 🌽🧑‍🌾🥄 sabR: Example Workflow
 
 This example demonstrates how to use the `sabR` package to:
 
-- Load local raster stacks of soil properties
-- Compute **zonal statistics** from **plots/polygons**
-- Convert **plots**, **points**, and **rasters** into `SoilProfileCollection` objects
+- Load local raster stacks of soil properties  
+- Compute **zonal statistics** from **plots/polygons**  
+- Convert **plots**, **points**, and **rasters** into `SoilProfileCollection` objects  
+- Plot depth functions grouped by ID, polygon, or point clusters  
 
 ---
 
@@ -14,6 +15,7 @@ This example demonstrates how to use the `sabR` package to:
 library(sabR)
 library(sf)
 library(ggplot2)
+library(lattice)
 library(terra)
 ```
 
@@ -22,7 +24,7 @@ library(terra)
 ## 📁 Define Inputs and Load AOI
 
 ```r
-raster_dir <- "T:/IA-Kitchen/results/maps/Batch1"
+raster_dir <- "T:/IA-Kitchen/results/maps/Batch1" ###Check your location on shared BOX drive
 shapefile_path <- system.file("extdata", "SABRplots.shp", package = "sabR")
 plots <- sf::st_read(shapefile_path)
 ```
@@ -62,11 +64,15 @@ ggplot(results$Weighted, aes(x = plot, y = weighted_mean, color = SoilProperty))
   theme_minimal(base_size = 13) +
   labs(
     x = "Plot", y = "Weighted Mean ± SD",
-    title = "Depth-weighted Zonal Stats by Plot and Soil Property 0-20 cm",
+    title = "Depth-weighted Zonal Stats by Plot and Soil Property 0–20 cm",
     color = "Soil Property"
   ) +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
+
+## 📊 Plotting Weighted Mean ± SD Output
+
+![Zonal Stats Plot](man/figures/sabrzonalstats.png)
 
 ---
 
@@ -80,9 +86,8 @@ sabr <- fetch_sabR(
   PSDnormalize = TRUE,
   aoi = plots,
   resample_method = "cubic",
-  resample_res = 12 ### Native Res is 3m
+  resample_res = 12
 )
-
 ```
 
 ---
@@ -121,7 +126,7 @@ zones_spc <- sabRzs_to_spc(
 
 ---
 
-## 📍 Random Points → SoilProfileCollection
+## 📍 Points → SoilProfileCollection
 
 ```r
 set.seed(42)
@@ -138,3 +143,94 @@ pts_spc <- sabRpts_to_spc(
   source = "SABR"
 )
 ```
+
+---
+
+## 🔄 Convert Random Points to SPC Grouped by Column
+
+```r
+rand_pts$group <- sample(c("Group_A", "Group_B"), size = nrow(rand_pts), replace = TRUE)
+
+pts_spc_groupcol <- sabRpts_to_spc(
+  stack = sabr$stack,
+  pts = rand_pts,
+  props = c("sand", "clay", "TOC", "pH"),
+  depths = c("0-5", "5-15", "15-30", "30-60", "60-100", "100-150", "150-200"),
+  new_depths = c(0, 10, 30, 50, 100, 200),
+  source = "SABR",
+  group_column = "group"
+)
+
+sabR_depth(
+  spc = pts_spc_groupcol,
+  variables = c("sand", "clay", "TOC", "pH"),
+  slab_structure = c(0, 10, 30, 50, 100, 200),
+  group_id = "group_id",
+  stat = "mean_sd"
+)
+```
+
+![Mean Depth Plot](sabR/man/figures/meandepthplot.png)
+
+---
+
+## 🔄 Convert Points to SPC Grouped by Polygon
+
+```r
+subset_plots <- plots[plots$Name %in% c("NW_plot", "SW_plot", "NE_plot", "SE_plot"), ]
+
+pts_spc_polygroup <- sabRpts_to_spc(
+  stack = sabr$stack,
+  pts = rand_pts,
+  props = c("sand", "clay", "TOC", "pH"),
+  depths = c("0-5", "5-15", "15-30", "30-60", "60-100", "100-150", "150-200"),
+  new_depths = c(0, 10, 30, 50, 100, 200),
+  source = "SABR",
+  group_poly = subset_plots,
+  id_column = "Name"
+)
+
+pts_spc_polygroup <- pts_spc_polygroup[!is.na(pts_spc_polygroup$group_id), ]
+
+sabR_depth(
+  spc = pts_spc_polygroup,
+  variables = c("sand", "clay", "TOC", "pH"),
+  slab_structure = c(0, 10, 30, 50, 100, 200),
+  group_id = "group_id",
+  stat = "med_qr",
+  intervals = c(0.25, 0.75)
+)
+```
+
+![Med Depth Plot](sabR/man/figures/mediqrplot.png)
+
+---
+
+## 🌍 Convert Raster to SPC Grouped by Polygon
+
+```r
+sabr_spc <- sabRas_to_spc(
+  stack = sabr$stack,
+  props = c("sand", "clay", "TOC", "pH"),
+  depths = c("0-5", "5-15", "15-30", "30-60", "60-100", "100-150", "150-200"),
+  new_depths = c(0, 10, 30, 50, 100, 200),
+  source = "SABR",
+  group_poly = subset_plots,
+  id_column = "Name"
+)
+
+sabr_spc <- sabr_spc[!is.na(sabr_spc$group_id), ]
+
+sabR_depth(
+  spc = sabr_spc,
+  variables = c("sand", "clay", "TOC", "pH"),
+  slab_structure = c(0, 10, 30, 50, 100, 200),
+  group_id = "group_id",
+  stat = "med_pr",
+  intervals = c(5, 95)
+)
+```
+
+![MedPerc Depth Plot](sabR/man/figures/medpercplot.png)
+
+---

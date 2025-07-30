@@ -10,7 +10,10 @@ sabRpts_to_spc(
   props = c("sand", "clay", "TOC", "pH"),
   depths = c("0-5", "5-15", "15-30"),
   new_depths = c(0, 15, 30),
-  source = "SABR"
+  source = "SABR",
+  group_column = NULL,
+  group_poly = NULL,
+  id_column = "Name"
 )
 }
 \arguments{
@@ -23,17 +26,20 @@ sabRpts_to_spc(
 \item{depths}{Character vector; raster depth intervals to include. Must be a subset of:
 \code{"0-5"}, \code{"5-15"}, \code{"15-30"}, \code{"30-60"}, \code{"60-100"}, \code{"100-150"}, \code{"150-200"}.}
 
-\item{new_depths}{Numeric vector; standard depths (in cm) to aggregate to, e.g., \code{c(0, 15, 30, 60, 100)}.}
+\item{new_depths}{Numeric vector; standard depths (in cm) to aggregate to.}
 
 \item{source}{Character; prefix for profile IDs (e.g., \code{"SABR"}).}
+
+\item{group_column}{Optional character; name of a column in \code{pts} to assign groups.}
+
+\item{group_poly}{Optional polygon layer (sf, SpatVector, or path); spatial polygons for assigning groups via spatial join.}
+
+\item{id_column}{Character; used with \code{group_poly} to assign group ID from that column.}
 }
 \value{
-A \code{SoilProfileCollection} with one profile per point location.
+A \code{SoilProfileCollection} with site-level group metadata for later grouped depth function plots.
 }
 \description{
-Extracts raster data at specified point locations and converts them into an \code{aqp::SoilProfileCollection}.
-}
-\details{
-Raster layers are matched by name to the specified properties and depths.
-Extracted values are reshaped, converted to 1 cm slices, and aggregated by mean within \code{new_depths}.
+Extracts raster data at specified point locations and converts them into an \code{aqp::SoilProfileCollection},
+with optional assignment of group IDs from point attributes or spatial join with polygons.
 }
