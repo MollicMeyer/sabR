@@ -80,8 +80,8 @@ sabRpts_to_spc <- function(
       stop("group_poly must be a path, sf, or SpatVector.")
     }
     group_poly <- terra::project(group_poly, terra::crs(stack))
-    join_result <- terra::extract(group_poly, pts, bind = TRUE)
-    pts$group_id <- join_result[[id_column]]
+    joined <- terra::extract(group_poly, pts)
+    pts$group_id <- joined[[id_column]]
   } else if (!is.null(group_column)) {
     if (!(group_column %in% names(pts))) {
       stop("group_column not found in pts.")
