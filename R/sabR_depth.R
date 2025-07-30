@@ -137,9 +137,10 @@ sabR_depth <- function(
   )
   y_label <- label_map[[stat]]
 
-  # Plot
+  central_col <- if (stat == "mean_sd") "mean" else "median"
+  #plot
   xyplot(
-    bottom ~ mean | variable,
+    bottom ~ get(central_col) | variable,
     data = slab_df,
     lower = slab_df$lower,
     upper = slab_df$upper,
