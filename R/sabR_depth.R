@@ -110,7 +110,7 @@ sabR_depth <- function(
   )
 
   # Ensure group_source is factor
-  slab_df$group_source <- factor(slab_df$group_source)
+  slab_df$group_source <- as.factor(slab_df$group_source)
 
   # Set color palette
   okabe_ito <- c(
