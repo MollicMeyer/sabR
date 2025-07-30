@@ -143,7 +143,7 @@ sabR_depth <- function(
     data = slab_df,
     lower = slab_df$lower,
     upper = slab_df$upper,
-    groups = slab_df$group_source,
+    groups = group_source,
     sync.colors = TRUE,
     alpha = 0.5,
     ylab = "Depth (cm)",
