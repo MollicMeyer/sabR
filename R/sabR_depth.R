@@ -1,32 +1,44 @@
-#' Plot Grouped Depth Functions from a SoilProfileCollection
+#' Plot Grouped Soil Depth Functions from a SoilProfileCollection
 #'
-#' Generate depth function plots for selected soil properties across optional groupings.
+#' Creates grouped depth function plots for selected soil properties using slab summaries.
+#' Allows plotting of means ± SD, medians ± IQR, or medians ± percentiles by group.
 #'
 #' @param spc A `SoilProfileCollection` object.
-#' @param variables Character vector of soil properties to include in plots.
-#' @param slab_structure Numeric vector of horizon breaks (e.g., `c(0, 20, 40, 60)`).
-#' @param group_id Optional character string; the name of the column in `site(spc)` to use as grouping factor.
-#' @param stat Character; type of summary to plot. Options:
-#'   - `"mean_sd"`: mean ± standard deviation
-#'   - `"med_sd"`: median ± standard deviation
-#'   - `"med_qr"`: median ± interquartile range
-#'   - `"med_pr"`: median ± user-specified percentiles
-#' @param intervals Numeric vector of length 2; used when `stat = "med_pr"` or `"med_qr"` to define lower and upper bounds (e.g., `c(5, 95)` or `c(25, 75)`).
+#' @param variables Character vector of soil property names to plot (must match horizon names).
+#' @param slab_structure Numeric vector of depth breaks to use for aggregation (e.g., `c(0, 20, 40, 60)`).
+#' @param group_id Optional character name of the grouping column in `site(spc)` (e.g., `"plot"` or `"source"`). If `NULL`, all profiles are treated as one group.
+#' @param stat Character; statistical summary type. One of:
+#'   - `"mean_sd"`: mean ± standard deviation,
+#'   - `"med_sd"`: median ± standard deviation,
+#'   - `"med_qr"`: median ± interquartile range (25th–75th),
+#'   - `"med_pr"`: median ± percentiles (set via `intervals`).
+#' @param intervals Numeric vector of length 2; used when `stat = "med_pr"` or `"med_qr"` to set quantile boundaries (e.g., `c(0.1, 0.9)` or `c(0.25, 0.75)`).
 #'
-#' @return A `lattice` plot of depth functions faceted by variable and grouped by the optional `group_id`.
+#' @return A `lattice` plot object (multi-panel depth function plot).
 #'
 #' @details
-#' - If `group_id` is `NULL`, all profiles are treated as a single group.
-#' - Only supports up to 8 unique group levels due to color palette constraints.
-#' - Automatically sets `source` factor based on `group_id`.
-#' - Interval labeling adjusts to match selected `stat` type.
-#' @import aqp
-#' @import lattice
-#' @importFrom dplyr select mutate
+#' - Grouping variable (`group_id`) must be a factor. If not, it will be coerced.
+#' - Limited to 8 groups for color palette compatibility.
+#' - Internally uses `aqp::slab()` and `lattice::xyplot()`.
+#'
+#' @examples
+#' \dontrun{
+#' sabR_depth(
+#'   spc = pts_spc_groupcol,
+#'   variables = c("sand", "clay", "TOC", "pH"),
+#'   slab_structure = c(0, 20, 40, 60),
+#'   group_id = "group",
+#'   stat = "med_pr",
+#'   intervals = c(0.1, 0.9)
+#' )
+#' }
+#'
 #' @importFrom lattice xyplot
 #' @importFrom aqp slab site horizonDepths horizonNames prepanel.depth_function panel.depth_function
-#' @importFrom aqp site
+#' @importFrom dplyr group_by summarise across ungroup
+#' @importFrom tidyr pivot_longer
 #' @export
+
 sabR_depth <- function(
   spc,
   variables = c("sand", "clay", "TOC", "pH"),
