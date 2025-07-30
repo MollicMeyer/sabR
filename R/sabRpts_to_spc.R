@@ -158,8 +158,8 @@ sabRpts_to_spc <- function(
 
   depths(agg) <- peiid ~ top + bottom
   site(agg) <- data.frame(
-    peiid = unique(agg$peiid),
-    group_id = unique(vals$group_id)
+    peiid = agg$peiid,
+    group_id = vals$group_id
   )
 
   return(agg)
