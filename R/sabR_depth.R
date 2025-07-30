@@ -156,7 +156,7 @@ sabR_depth <- function(
       y = list(tick.number = 6, alternating = 3, relation = 'free')
     ),
     par.settings = list(
-      superpose.line = list(lwd = 3, col = palette_colors, lty = 1)
+      superpose.line = list(lwd = 3, col = palette_colors, lty = 2)
     ),
     panel = panel.depth_function,
     prepanel = prepanel.depth_function,
