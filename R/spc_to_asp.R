@@ -109,7 +109,7 @@ spc_to_asp <- function(
         "SaxtonRawls" = SaxtonRawlsSAT(s, c, om),
         "ROSETTA" = {
           ro <- try(
-            ROSETTA(
+            soilDB::ROSETTA(
               data.frame(sand = s, silt = si, clay = c, db = h$BD[j]),
               vars = c("sand", "silt", "clay", "db")
             ),
@@ -138,7 +138,7 @@ spc_to_asp <- function(
         "SaxtonRawls" = SaxtonRawlsKSAT(s, c, om),
         "ROSETTA" = {
           ro <- try(
-            ROSETTA(
+            soilDB::ROSETTA(
               data.frame(sand = s, silt = si, clay = c, db = h$BD[j]),
               vars = c("sand", "silt", "clay", "db")
             ),
