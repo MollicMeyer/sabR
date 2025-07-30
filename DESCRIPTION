@@ -20,7 +20,8 @@ Imports:
     tidyr,
     aqp,
     stringr,
-    tibble
+    tibble,
+    lattice,
 Suggests: 
     devtools,
     testthat,

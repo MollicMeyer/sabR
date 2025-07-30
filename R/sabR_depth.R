@@ -20,10 +20,12 @@
 #' - Only supports up to 8 unique group levels due to color palette constraints.
 #' - Automatically sets `source` factor based on `group_id`.
 #' - Interval labeling adjusts to match selected `stat` type.
-#'
 #' @import aqp
 #' @import lattice
 #' @importFrom dplyr select mutate
+#' @importFrom lattice xyplot
+#' @importFrom aqp slab site horizonDepths horizonNames prepanel.depth_function panel.depth_function
+#' @importFrom aqp site
 #' @export
 sabR_depth <- function(
   spc,
