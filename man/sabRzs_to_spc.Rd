@@ -17,27 +17,32 @@ sabRzs_to_spc(
 )
 }
 \arguments{
-\item{stack}{SpatRaster; the raster stack (e.g., output from \code{fetch_sabR()$stack})}
+\item{stack}{SpatRaster; raster stack (e.g., from \code{fetch_sabR()}).}
 
-\item{aoi}{Character path, sf object, SpatVector, or SpatRaster; the area of interest (polygons or extent)}
+\item{aoi}{Character path, sf object, SpatVector, or SpatRaster; area of interest (polygon zones or raster extent).}
 
-\item{zones}{Character vector; values in the \code{id_column} to extract (e.g., c("Zone1", "Zone2"))}
+\item{zones}{Character vector; values from \code{id_column} to extract (e.g., \code{"Zone1"}, \code{"Zone2"}).}
 
-\item{id_column}{Character; name of column in \code{aoi} used as profile ID (e.g., id_column = "Name")}
+\item{id_column}{Character; column name in \code{aoi} used to identify zones (e.g., \code{"Name"}).}
 
-\item{props}{Character vector; soil properties to include (e.g., props = c("sand", "clay"))}
+\item{props}{Character vector; soil properties to include.}
 
-\item{depths}{Character vector; depth intervals (e.g., depths = c("0-5", "5-15"))}
+\item{depths}{Character vector; raster depth intervals to include. Must be a subset of:
+\code{"0-5"}, \code{"5-15"}, \code{"15-30"}, \code{"30-60"}, \code{"60-100"}, \code{"100-150"}, \code{"150-200"}.}
 
-\item{new_depths}{Numeric vector; new depth bins to aggregate to (e.g., c(0, 15, 30))}
+\item{new_depths}{Numeric vector; standard depths to aggregate to.}
 
-\item{stats}{Character vector; statistics to compute (e.g., stats = c("mean", "sd"))}
+\item{stats}{Character vector; statistics to compute (\code{"mean"}, \code{"sd"}, etc.).}
 
-\item{source}{Character; string to prefix each profile ID (e.g., source = "SABR")}
+\item{source}{Character; prefix for profile IDs (e.g., \code{"SABR"}).}
 }
 \value{
-A list of SoilProfileCollections, one per statistic
+A named list of \code{SoilProfileCollection}s, one for each statistic requested.
 }
 \description{
-Computes zonal summary statistics for polygons and converts them to SoilProfileCollection.
+Computes zonal summary statistics from raster stack over polygons and converts them to an \code{aqp::SoilProfileCollection}.
+}
+\details{
+Raster layers are aggregated within each zone using specified statistics, then converted to profiles.
+Profiles are sliced into 1 cm intervals and aggregated to \code{new_depths}.
 }

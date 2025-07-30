@@ -1,29 +1,27 @@
-#' Convert Raster Stack to SoilProfileCollection and Aggregate to Standard Depths
+#' Convert Raster Stack to SoilProfileCollection with Depth Aggregation
 #'
 #' Converts a stack of soil property rasters into an `aqp::SoilProfileCollection` object,
 #' then aggregates values to user-defined standard depth intervals.
 #'
-#' @param stack A `SpatRaster` object where layer names follow the pattern `property_depth`, e.g., `sand_0-5`.
-#' @param props Character vector of soil properties to include. Must be in the allowed list.
-#' @param depths Character vector of raster depth intervals to include. Must be subset of:
+#' @param stack SpatRaster; the raster stack where layer names follow the pattern `property_depth`, e.g., `sand_0-5`.
+#' @param props Character vector; soil properties to include (e.g., `"sand"`, `"clay"`).
+#' @param depths Character vector; raster depth intervals to include (e.g., `"0-5"`, `"5-15"`). Must be a subset of:
 #' `"0-5"`, `"5-15"`, `"15-30"`, `"30-60"`, `"60-100"`, `"100-150"`, `"150-200"`.
-#' @param new_depths Numeric vector of standard depths (in cm) to aggregate to, e.g., `c(0, 5, 15, 30, 60, 100, 150, 200)`.
-#' @param source Optional character string appended to profile IDs (e.g., `"SABR"`) to prevent overlap across sources.
+#' @param new_depths Numeric vector; standard depths (in cm) to aggregate to, e.g., `c(0, 15, 30, 60, 100)`.
+#' @param source Character; optional prefix for profile IDs (e.g., `"SABR"`).
 #'
-#' @return A `SoilProfileCollection` object aggregated to the specified `new_depths`.
+#' @return A `SoilProfileCollection` aggregated to the specified `new_depths`.
 #'
 #' @details
-#' - This function requires that raster layer names follow the pattern `"property_depth"`, e.g., `"clay_5-15"`.
-#' - `depths` specifies which original raster depth intervals to include.
-#' - `new_depths` specifies the target output horizon structure (e.g., 0–30cm in 3 layers).
-#' - Each raster pixel becomes a profile, with spatial coordinates retained in `site()`.
-#' - Internally, raster values are reshaped, converted to SPC, diced to 1cm slices, and re-aggregated using means.
+#' Each raster pixel becomes a profile. Spatial coordinates are preserved in the site data.
+#' Raster values are diced into 1 cm slices and aggregated to the specified depth bins using mean values.
 #'
 #' @import terra
-#' @importFrom dplyr select mutate group_by summarise filter across ungroup arrange left_join rowwise
+#' @importFrom dplyr select mutate group_by summarise filter across left_join
 #' @importFrom tidyr pivot_longer pivot_wider separate
-#' @importFrom aqp depths site horizonNames idname dice
+#' @importFrom aqp depths site dice
 #' @export
+
 sabRas_to_spc <- function(
   stack = rstack,
   props = c("sand", "clay", "silt", "TOC", "BD"),

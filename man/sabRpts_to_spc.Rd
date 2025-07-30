@@ -2,7 +2,7 @@
 % Please edit documentation in R/sabRpts_to_spc.R
 \name{sabRpts_to_spc}
 \alias{sabRpts_to_spc}
-\title{Extract Raster Values from Points to SoilProfileCollection}
+\title{Extract Raster Values from Points and Convert to SoilProfileCollection}
 \usage{
 sabRpts_to_spc(
   stack,
@@ -14,21 +14,26 @@ sabRpts_to_spc(
 )
 }
 \arguments{
-\item{stack}{SpatRaster; the raster stack to extract values from (e.g., output from \code{fetch_sabR()$stack})}
+\item{stack}{SpatRaster; raster stack to extract values from.}
 
-\item{pts}{Character path, sf object, SpatVector, or SpatRaster; spatial points for extraction}
+\item{pts}{Character path, sf object, SpatVector, or SpatRaster; point locations for extraction.}
 
-\item{props}{Character vector; soil properties to include (e.g., props = c("sand", "clay"))}
+\item{props}{Character vector; soil properties to extract (e.g., \code{"sand"}, \code{"clay"}).}
 
-\item{depths}{Character vector; depth intervals to use (e.g., depths = c("0-5", "5-15"))}
+\item{depths}{Character vector; raster depth intervals to include. Must be a subset of:
+\code{"0-5"}, \code{"5-15"}, \code{"15-30"}, \code{"30-60"}, \code{"60-100"}, \code{"100-150"}, \code{"150-200"}.}
 
-\item{new_depths}{Numeric vector; new standard horizons (e.g., new_depths = c(0, 20, 40, 60))}
+\item{new_depths}{Numeric vector; standard depths (in cm) to aggregate to, e.g., \code{c(0, 15, 30, 60, 100)}.}
 
-\item{source}{Character; used to append to unique ID (e.g., source = "SABR")}
+\item{source}{Character; prefix for profile IDs (e.g., \code{"SABR"}).}
 }
 \value{
-A SoilProfileCollection with values from raster layers at point locations
+A \code{SoilProfileCollection} with one profile per point location.
 }
 \description{
-Converts raster data at specified point locations into a SoilProfileCollection.
+Extracts raster data at specified point locations and converts them into an \code{aqp::SoilProfileCollection}.
+}
+\details{
+Raster layers are matched by name to the specified properties and depths.
+Extracted values are reshaped, converted to 1 cm slices, and aggregated by mean within \code{new_depths}.
 }

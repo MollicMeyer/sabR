@@ -1,19 +1,30 @@
 #' Convert Zonal Statistics from Polygons to SoilProfileCollection
 #'
-#' Computes zonal summary statistics for polygons and converts them to SoilProfileCollection.
+#' Computes zonal summary statistics from raster stack over polygons and converts them to an `aqp::SoilProfileCollection`.
 #'
-#' @param stack SpatRaster; the raster stack (e.g., output from `fetch_sabR()$stack`)
-#' @param aoi Character path, sf object, SpatVector, or SpatRaster; the area of interest (polygons or extent)
-#' @param zones Character vector; values in the `id_column` to extract (e.g., c("Zone1", "Zone2"))
-#' @param id_column Character; name of column in `aoi` used as profile ID (e.g., id_column = "Name")
-#' @param props Character vector; soil properties to include (e.g., props = c("sand", "clay"))
-#' @param depths Character vector; depth intervals (e.g., depths = c("0-5", "5-15"))
-#' @param new_depths Numeric vector; new depth bins to aggregate to (e.g., c(0, 15, 30))
-#' @param stats Character vector; statistics to compute (e.g., stats = c("mean", "sd"))
-#' @param source Character; string to prefix each profile ID (e.g., source = "SABR")
+#' @param stack SpatRaster; raster stack (e.g., from `fetch_sabR()`).
+#' @param aoi Character path, sf object, SpatVector, or SpatRaster; area of interest (polygon zones or raster extent).
+#' @param zones Character vector; values from `id_column` to extract (e.g., `"Zone1"`, `"Zone2"`).
+#' @param id_column Character; column name in `aoi` used to identify zones (e.g., `"Name"`).
+#' @param props Character vector; soil properties to include.
+#' @param depths Character vector; raster depth intervals to include. Must be a subset of:
+#' `"0-5"`, `"5-15"`, `"15-30"`, `"30-60"`, `"60-100"`, `"100-150"`, `"150-200"`.
+#' @param new_depths Numeric vector; standard depths to aggregate to.
+#' @param stats Character vector; statistics to compute (`"mean"`, `"sd"`, etc.).
+#' @param source Character; prefix for profile IDs (e.g., `"SABR"`).
 #'
-#' @return A list of SoilProfileCollections, one per statistic
+#' @return A named list of `SoilProfileCollection`s, one for each statistic requested.
+#'
+#' @details
+#' Raster layers are aggregated within each zone using specified statistics, then converted to profiles.
+#' Profiles are sliced into 1 cm intervals and aggregated to `new_depths`.
+#'
+#' @import terra
+#' @importFrom dplyr select mutate group_by summarise filter across left_join
+#' @importFrom tidyr pivot_longer pivot_wider separate
+#' @importFrom aqp depths site dice
 #' @export
+#'
 sabRzs_to_spc <- function(
   stack = sabr$stack,
   aoi = NULL,

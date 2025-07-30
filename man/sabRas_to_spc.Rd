@@ -2,7 +2,7 @@
 % Please edit documentation in R/sabRas_to_spc.R
 \name{sabRas_to_spc}
 \alias{sabRas_to_spc}
-\title{Convert Raster Stack to SoilProfileCollection and Aggregate to Standard Depths}
+\title{Convert Raster Stack to SoilProfileCollection with Depth Aggregation}
 \usage{
 sabRas_to_spc(
   stack = rstack,
@@ -13,30 +13,25 @@ sabRas_to_spc(
 )
 }
 \arguments{
-\item{stack}{A \code{SpatRaster} object where layer names follow the pattern \code{property_depth}, e.g., \code{sand_0-5}.}
+\item{stack}{SpatRaster; the raster stack where layer names follow the pattern \code{property_depth}, e.g., \code{sand_0-5}.}
 
-\item{props}{Character vector of soil properties to include. Must be in the allowed list.}
+\item{props}{Character vector; soil properties to include (e.g., \code{"sand"}, \code{"clay"}).}
 
-\item{depths}{Character vector of raster depth intervals to include. Must be subset of:
+\item{depths}{Character vector; raster depth intervals to include (e.g., \code{"0-5"}, \code{"5-15"}). Must be a subset of:
 \code{"0-5"}, \code{"5-15"}, \code{"15-30"}, \code{"30-60"}, \code{"60-100"}, \code{"100-150"}, \code{"150-200"}.}
 
-\item{new_depths}{Numeric vector of standard depths (in cm) to aggregate to, e.g., \code{c(0, 5, 15, 30, 60, 100, 150, 200)}.}
+\item{new_depths}{Numeric vector; standard depths (in cm) to aggregate to, e.g., \code{c(0, 15, 30, 60, 100)}.}
 
-\item{source}{Optional character string appended to profile IDs (e.g., \code{"SABR"}) to prevent overlap across sources.}
+\item{source}{Character; optional prefix for profile IDs (e.g., \code{"SABR"}).}
 }
 \value{
-A \code{SoilProfileCollection} object aggregated to the specified \code{new_depths}.
+A \code{SoilProfileCollection} aggregated to the specified \code{new_depths}.
 }
 \description{
 Converts a stack of soil property rasters into an \code{aqp::SoilProfileCollection} object,
 then aggregates values to user-defined standard depth intervals.
 }
 \details{
-\itemize{
-\item This function requires that raster layer names follow the pattern \code{"property_depth"}, e.g., \code{"clay_5-15"}.
-\item \code{depths} specifies which original raster depth intervals to include.
-\item \code{new_depths} specifies the target output horizon structure (e.g., 0–30cm in 3 layers).
-\item Each raster pixel becomes a profile, with spatial coordinates retained in \code{site()}.
-\item Internally, raster values are reshaped, converted to SPC, diced to 1cm slices, and re-aggregated using means.
-}
+Each raster pixel becomes a profile. Spatial coordinates are preserved in the site data.
+Raster values are diced into 1 cm slices and aggregated to the specified depth bins using mean values.
 }

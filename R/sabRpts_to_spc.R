@@ -1,16 +1,27 @@
-#' Extract Raster Values from Points to SoilProfileCollection
+#' Extract Raster Values from Points and Convert to SoilProfileCollection
 #'
-#' Converts raster data at specified point locations into a SoilProfileCollection.
+#' Extracts raster data at specified point locations and converts them into an `aqp::SoilProfileCollection`.
 #'
-#' @param stack SpatRaster; the raster stack to extract values from (e.g., output from `fetch_sabR()$stack`)
-#' @param pts Character path, sf object, SpatVector, or SpatRaster; spatial points for extraction
-#' @param props Character vector; soil properties to include (e.g., props = c("sand", "clay"))
-#' @param depths Character vector; depth intervals to use (e.g., depths = c("0-5", "5-15"))
-#' @param new_depths Numeric vector; new standard horizons (e.g., new_depths = c(0, 20, 40, 60))
-#' @param source Character; used to append to unique ID (e.g., source = "SABR")
+#' @param stack SpatRaster; raster stack to extract values from.
+#' @param pts Character path, sf object, SpatVector, or SpatRaster; point locations for extraction.
+#' @param props Character vector; soil properties to extract (e.g., `"sand"`, `"clay"`).
+#' @param depths Character vector; raster depth intervals to include. Must be a subset of:
+#' `"0-5"`, `"5-15"`, `"15-30"`, `"30-60"`, `"60-100"`, `"100-150"`, `"150-200"`.
+#' @param new_depths Numeric vector; standard depths (in cm) to aggregate to, e.g., `c(0, 15, 30, 60, 100)`.
+#' @param source Character; prefix for profile IDs (e.g., `"SABR"`).
 #'
-#' @return A SoilProfileCollection with values from raster layers at point locations
+#' @return A `SoilProfileCollection` with one profile per point location.
+#'
+#' @details
+#' Raster layers are matched by name to the specified properties and depths.
+#' Extracted values are reshaped, converted to 1 cm slices, and aggregated by mean within `new_depths`.
+#'
+#' @import terra
+#' @importFrom dplyr select mutate group_by summarise filter across left_join
+#' @importFrom tidyr pivot_longer pivot_wider separate
+#' @importFrom aqp depths site dice
 #' @export
+
 sabRpts_to_spc <- function(
   stack,
   pts,
