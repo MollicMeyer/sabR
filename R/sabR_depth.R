@@ -57,16 +57,17 @@ sabR_depth <- function(
     stop("Invalid `stat`. Choose from: ", paste(stat_options, collapse = ", "))
   }
 
+  # Assign group source column
   if (!is.null(group_id)) {
     if (!group_id %in% names(site(spc))) {
       stop(paste0("`", group_id, "` not found in site(spc)."))
     }
-    site(spc)$source <- as.factor(site(spc)[[group_id]])
+    site(spc)$group_source <- as.factor(site(spc)[[group_id]])
   } else {
-    site(spc)$source <- factor("All Profiles")
+    site(spc)$group_source <- factor("All Profiles")
   }
 
-  n_groups <- length(unique(site(spc)$source))
+  n_groups <- length(unique(site(spc)$group_source))
   if (n_groups > 8) {
     stop("Too many groups: this function supports up to 8 groups for plotting.")
   }
@@ -101,19 +102,15 @@ sabR_depth <- function(
   slab_df <- slab(
     spc,
     fm = as.formula(paste0(
-      "site(source) ~ ",
+      "site(group_source) ~ ",
       paste(variables, collapse = " + ")
     )),
     slab.structure = slab_structure,
     slab.fun = slab_fun
   )
 
-  if (!"source" %in% names(slab_df)) {
-    stop("Missing `source` column in slab_df")
-  }
-  if (!is.factor(slab_df$source)) {
-    slab_df$source <- factor(slab_df$source)
-  }
+  # Ensure group_source is factor
+  slab_df$group_source <- factor(slab_df$group_source)
 
   # Set color palette
   okabe_ito <- c(
@@ -128,7 +125,7 @@ sabR_depth <- function(
   )
   palette_colors <- okabe_ito[seq_len(n_groups)]
 
-  # Force slab bottom to 0 for top slice
+  # Fix top slice bottom depth
   slab_df$bottom[slab_df$top == 0] <- 0
 
   # Plot label logic
@@ -140,13 +137,13 @@ sabR_depth <- function(
   )
   y_label <- label_map[[stat]]
 
-  # Generate plot
+  # Plot
   xyplot(
     bottom ~ mean | variable,
     data = slab_df,
     lower = slab_df$lower,
     upper = slab_df$upper,
-    groups = source,
+    groups = slab_df$group_source,
     sync.colors = TRUE,
     alpha = 0.5,
     ylab = "Depth (cm)",
