@@ -81,17 +81,21 @@ sabRpts_to_spc <- function(
   # Add ID
   vals$peiid <- paste0(source, "_pt_", seq_len(nrow(vals)))
 
-  # Reshape and split variable names
+  # Reshape and split variable names safely
   long_df <- vals %>%
     select(-ID) %>%
     pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
-    filter(!is.na(value)) %>%
-    separate(
-      layer,
-      into = c("variable", "depth"),
-      sep = "_(?=\\d)",
-      remove = FALSE
-    ) %>%
+    filter(!is.na(value))
+
+  # Extract variable and depth using regex that respects internal underscores
+  layer_info <- str_match(long_df$layer, "^(.*)_((\\d+-\\d+))$")
+
+  # Assign variable and depth
+  long_df$variable <- layer_info[, 2]
+  long_df$depth <- layer_info[, 3]
+
+  # Filter out any layers not in depth_lookup (if needed)
+  long_df <- long_df %>%
     filter(depth %in% names(depth_lookup)) %>%
     mutate(
       hzdept = vapply(depth, function(d) depth_lookup[[d]][1], numeric(1)),

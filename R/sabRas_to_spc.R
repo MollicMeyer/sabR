@@ -101,23 +101,25 @@ sabRas_to_spc <- function(
   site_data <- pt_df %>%
     select(peiid, x, y)
 
-  # Convert to long format
+  # Convert to long format and safely split variable/depth
   long_df <- pt_df %>%
     select(-x, -y, -cell) %>%
-    pivot_longer(cols = -peiid, names_to = "layer", values_to = "value") %>%
-    separate(
-      layer,
-      into = c("variable", "depth_label"),
-      sep = "_",
-      extra = "merge"
-    ) %>%
-    filter(variable %in% props & depth_label %in% depths) %>%
-    rowwise() %>%
+    pivot_longer(cols = -peiid, names_to = "layer", values_to = "value")
+
+  # Extract variable and depth label from the layer name
+  layer_info <- str_match(long_df$layer, "^(.*)_((\\d+-\\d+))$")
+
+  # Assign variable and depth_label
+  long_df$variable <- layer_info[, 2]
+  long_df$depth_label <- layer_info[, 3]
+
+  # Filter and attach horizon depths
+  long_df <- long_df %>%
+    filter(variable %in% props, depth_label %in% depths) %>%
     mutate(
-      hzdept = depth_dict[[depth_label]][1],
-      hzdepb = depth_dict[[depth_label]][2]
-    ) %>%
-    ungroup()
+      hzdept = vapply(depth_label, function(d) depth_dict[[d]][1], numeric(1)),
+      hzdepb = vapply(depth_label, function(d) depth_dict[[d]][2], numeric(1))
+    )
 
   # Wide format
   hz_data <- long_df %>%

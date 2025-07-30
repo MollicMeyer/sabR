@@ -116,16 +116,18 @@ sabRzs_to_spc <- function(
     # Construct peiid
     zonal_result$peiid <- paste0(source, "_", zone_ids[zonal_result$zone])
 
-    # Long format and prep for SPC
     long_df <- zonal_result %>%
       select(-zone) %>%
-      pivot_longer(-peiid, names_to = "layer", values_to = "value") %>%
-      separate(
-        layer,
-        into = c("variable", "depth"),
-        sep = "_(?=\\d)",
-        remove = FALSE
-      ) %>%
+      pivot_longer(-peiid, names_to = "layer", values_to = "value")
+
+    # Extract variable name and depth from layer
+    layer_info <- str_match(long_df$layer, "^(.*)_((\\d+-\\d+))$")
+
+    long_df$variable <- layer_info[, 2]
+    long_df$depth <- layer_info[, 3]
+
+    # Add horizon top and bottom
+    long_df <- long_df %>%
       mutate(
         hzdept = sapply(depth, function(d) depth_lookup[[d]][1]),
         hzdepb = sapply(depth, function(d) depth_lookup[[d]][2])
