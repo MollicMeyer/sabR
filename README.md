@@ -5,7 +5,15 @@ This example demonstrates how to use the `sabR` package to:
 - Load local raster stacks of soil properties  
 - Compute **zonal statistics** from **plots/polygons**  
 - Convert **plots**, **points**, and **rasters** into `SoilProfileCollection` objects  
-- Plot depth functions grouped by ID, polygon, or point clusters  
+- Plot depth functions grouped by ID, polygon, or point clusters 
+
+---
+
+## 📦 Install Package
+```r
+# install the package
+remotes::install_github("MollicMeyer/meanNormalizedUsage")
+```
 
 ---
 
