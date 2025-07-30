@@ -81,7 +81,7 @@ SaxtonRawlsBD <- function(pSand = 50, pClay = 25, pOM = 4) {
 #' @export
 SaxtonRawlsLL15 <- function(pSand = 50, pClay = 25, pOM = 4) {
   res <- SaxtonRawls(pSand, pClay, pOM)
-  return(res$LL15)
+  return(res$LL15 / 100)
 }
 
 #' Estimate DUL using Saxton & Rawls (2006)
@@ -90,7 +90,7 @@ SaxtonRawlsLL15 <- function(pSand = 50, pClay = 25, pOM = 4) {
 #' @export
 SaxtonRawlsDUL <- function(pSand = 50, pClay = 25, pOM = 4) {
   res <- SaxtonRawls(pSand, pClay, pOM)
-  return(res$DUL)
+  return(res$DUL / 100)
 }
 
 #' Estimate SAT using Saxton & Rawls (2006)
@@ -99,7 +99,7 @@ SaxtonRawlsDUL <- function(pSand = 50, pClay = 25, pOM = 4) {
 #' @export
 SaxtonRawlsSAT <- function(pSand = 50, pClay = 25, pOM = 4) {
   res <- SaxtonRawls(pSand, pClay, pOM)
-  return(res$SAT)
+  return(res$SAT / 100)
 }
 
 #' Estimate SWCON using Saxton & Rawls (2006)
@@ -108,7 +108,7 @@ SaxtonRawlsSAT <- function(pSand = 50, pClay = 25, pOM = 4) {
 #' @export
 SaxtonRawlsSWCON <- function(pSand = 50, pClay = 25, pOM = 4) {
   res <- SaxtonRawls(pSand, pClay, pOM)
-  return(res$SWCON)
+  return(res$SWCON / 100)
 }
 
 #' Estimate Saturated Hydraulic Conductivity (KSAT) using Saxton & Rawls (2006)
