@@ -1,0 +1,11 @@
+citHeader("To cite the sabR package in publications, use:")
+
+bibentry(
+  "Manual",
+  title        = "sabR: Tools for working with locally stored digital soil raster maps developed as part of the Sustainable Advanced Bioeconomy Research (sabR) project.",
+  author       = person("Meyer", "Bohn", role = c("aut", "cre"), 
+                        comment = "Geospatial Laboratory for Soil Informatics, Department of Agronomy, Iowa State University, Ames, IA"),
+  year         = 2025,
+  note         = "Version 0.0.1. Licensed under CC BY 4.0.",
+  url          = "https://github.com/MollicMeyer/sabR"
+)

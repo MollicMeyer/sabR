@@ -126,7 +126,7 @@ zones_spc <- sabRzs_to_spc(
 
 ---
 
-## 📍 Points → SoilProfileCollection
+## 📍 Points → SoilProfileCollection (SPC)
 
 ```r
 set.seed(42)
@@ -169,8 +169,9 @@ sabR_depth(
   stat = "mean_sd"
 )
 ```
+## 📍 Points SPC Grouped by Column Output 
 
-![Mean Depth Plot](sabR/man/figures/meandepthplot.png)
+![Mean Depth Plot](man/figures/meandepthplot.png)
 
 ---
 
@@ -201,8 +202,9 @@ sabR_depth(
   intervals = c(0.25, 0.75)
 )
 ```
+## 📍 Points SPC Grouped by Plot Output
 
-![Med Depth Plot](sabR/man/figures/mediqrplot.png)
+![Med Depth Plot](man/figures/mediqrplot.png)
 
 ---
 
@@ -230,7 +232,8 @@ sabR_depth(
   intervals = c(5, 95)
 )
 ```
+## 🌍 Raster SPC Grouped by Plot Output
 
-![MedPerc Depth Plot](sabR/man/figures/medpercplot.png)
+![MedPerc Depth Plot](man/figures/medpercplot.png)
 
 ---
