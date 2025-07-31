@@ -12,7 +12,7 @@ This example demonstrates how to use the `sabR` package to:
 ## 📦 Install Package
 ```r
 # install the package
-remotes::install_github("MollicMeyer/meanNormalizedUsage")
+remotes::install_github("MollicMeyer/sabR")
 ```
 
 ---
